@@ -11,6 +11,12 @@ HOSTNAME=`hostname`
 DEFAULT_STATS_RANGE="AVERAGE -r 60 -s -1h"
 
 case ${1} in
+  "temperature")
+    if [ $# -eq 1 ]; then
+      /opt/vc/bin/vcgencmd measure_temp || echo "-"
+      exit $?
+    fi
+    ;;
   "freeradius")
     RADIUSSECRET=`grep '^[[:space:]]secret =' /etc/freeradius/3.0/clients.conf | /usr/bin/awk -F '=' '{print $2}' | /usr/bin/tr -d ' '`
     if [ $# -eq 4 -a $2 = "check" ]; then
@@ -81,15 +87,16 @@ case ${1} in
       exit $?
     fi
     if [ $# -eq 2 -a $2 = "reboot" ]; then
-      /sbin/shutdown -r -t 1
+      #/sbin/shutdown -r -t 1
       exit $?
     fi
     if [ $# -eq 2 -a $2 = "shutdown" ]; then
-      /sbin/shutdown -t 1
+      #/sbin/shutdown -t 1
       exit $?
     fi
     if [ $# -eq 2 -a $2 = "update" ]; then
-      /usr/bin/apt-get update -y -qq
+      sleep 4
+      #/usr/bin/apt-get update -y -qq
       exit $?
     fi
     if [ $# -eq 2 -a $2 = "upgrade" ]; then
