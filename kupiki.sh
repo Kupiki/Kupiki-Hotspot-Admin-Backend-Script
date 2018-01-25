@@ -13,7 +13,7 @@ DEFAULT_STATS_RANGE="AVERAGE -r 60 -s -1h"
 case ${1} in
   "temperature")
     if [ $# -eq 1 ]; then
-      /opt/vc/bin/vcgencmd measure_temp || echo "-"
+      /opt/vc/bin/vcgencmd measure_temp | cut -d= -f2 | cut -d\' -f1 || echo "-"
       exit $?
     fi
     ;;
