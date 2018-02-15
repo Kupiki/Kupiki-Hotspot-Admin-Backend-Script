@@ -80,6 +80,16 @@ case ${1} in
       exit $?
     fi
     ;;
+  "netflow")
+    if [ $# -eq 2 -a $2 = "stats" ]; then
+        if [ -f /var/cache/nfdump/.nfstat ]; then
+            /usr/bin/nfexpire -l /var/cache/nfdump | grep :
+            exit $?
+        fi
+        >&2 echo "Unable to find statistics of Netflow. Check the Kupiki installation."
+        exit 1
+    fi
+    ;;
   "system")
     if [ $# -eq 2 -a $2 = "check" ]; then
       #/usr/bin/apt-get upgrade -s | /bin/grep -v 'Const\|Inst' | /usr/bin/tail -1 | /usr/bin/cut -f1 -d ' '
