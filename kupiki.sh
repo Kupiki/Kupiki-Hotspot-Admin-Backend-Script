@@ -5,12 +5,52 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-KUPIKI_PATH="/home/chris/Kupiki-Hotspot-Admin"
+KUPIKI_PATH="/home/kupiki/Kupiki-Hotspot-Admin"
 HOSTNAME=`hostname`
 
 DEFAULT_STATS_RANGE="AVERAGE -r 60 -s -1h"
 
 case ${1} in
+  "coova")
+    if [ $# -eq 2 -a "$2" = "getMacAuth" ]; then
+      IS_ACTIVE='"active" : false'
+      MAC_PASSWD='"password" : ""'
+      grep HS_MACAUTH= /etc/chilli/defaults | cut -d'=' -f1 | grep '#' > /dev/null
+      if [ $? -eq 0 ]; then
+        IS_ACTIVE='"active" : false'
+      fi
+      grep HS_MACAUTH=off /etc/chilli/defaults > /dev/null
+      if [ $? -eq 0 ]; then
+        IS_ACTIVE='"active" : false'
+      fi
+      CURRENT_PASSWD=`grep HS_MACPASSWD= /etc/chilli/defaults | cut -d'=' -f2`
+      if [ "$CURRENT_PASSWD" != "" ]; then
+        MAC_PASSWD='"password" : '${CURRENT_PASSWD}
+      fi
+      echo "{ $IS_ACTIVE , $MAC_PASSWD }"
+      exit $?
+    fi
+    if [ \( $# -eq 3 -o $# -eq 4 \) -a "$2" = "setMacAuth" ]; then
+      IS_ACTIVE="off"
+      if [ "$3" = "true" ]; then
+        IS_ACTIVE="on"
+      fi
+      sed -i s/^.*HS_MACAUTH=.*/HS_MACAUTH=${IS_ACTIVE}/ /etc/chilli/defaults
+      if [ "$4" != "" ]; then
+        grep HS_MACPASSWD= /etc/chilli/defaults > /dev/null
+        if [ $? -eq 1 ]; then
+          sed -i "21iHS_MACPASSWD=\"$4\"" /etc/chilli/defaults
+        else
+          sed -i s/^.*HS_MACPASSWD=.*/HS_MACPASSWD=\"$4\"/ /etc/chilli/defaults
+        fi
+      fi
+      exit $?
+    fi
+    if [ $# -eq 4 -a "$2" = "setMacAuth" ]; then
+      echo '{ "active" : true, "password" : "123456"}'
+      exit $?
+    fi
+    ;;
   "temperature")
     if [ $# -eq 1 ]; then
       /opt/vc/bin/vcgencmd measure_temp | cut -d= -f2 | cut -d\' -f1 || echo "-"
@@ -19,51 +59,51 @@ case ${1} in
     ;;
   "freeradius")
     RADIUSSECRET=`grep '^[[:space:]]secret =' /etc/freeradius/3.0/clients.conf | /usr/bin/awk -F '=' '{print $2}' | /usr/bin/tr -d ' '`
-    if [ $# -eq 4 -a $2 = "check" ]; then
+    if [ $# -eq 4 -a "$2" = "check" ]; then
       echo User-Name="$3",User-Password="$4" | /usr/bin/radclient -c '1' -n '3' -r '3' -t '3' -x '127.0.0.1:1812' 'auth' "$RADIUSSECRET" 2>&1
       exit $?
     fi
-    if [ $# -eq 3 -a $2 = "disconnect" ]; then
+    if [ $# -eq 3 -a "$2" = "disconnect" ]; then
       echo "User-Name=$3" | /usr/bin/radclient -x localhost:3779 disconnect $RADIUSSECRET 2>&1
       exit $?
     fi
     ;;
   "data")
-    if [ $# -eq 2 -a $2 = "disk" ]; then
+    if [ $# -eq 2 -a "$2" = "disk" ]; then
       /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/df-root/df_complex-used.rrd $DEFAULT_STATS_RANGE
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "memory" ]; then
+    if [ $# -eq 2 -a "$2" = "memory" ]; then
       /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/memory/memory-used.rrd $DEFAULT_STATS_RANGE
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "cpu" ]; then
+    if [ $# -eq 2 -a "$2" = "cpu" ]; then
       /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/processes/ps_state-running.rrd $DEFAULT_STATS_RANGE
       exit $?
     fi
     ;;
   "portal")
-    if [ $# -eq 2 -a $2 = "getConfiguration" ]; then
+    if [ $# -eq 2 -a "$2" = "getConfiguration" ]; then
       cat /usr/share/nginx/portal/js/configuration.json
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "saveConfiguration" ]; then
+    if [ $# -eq 2 -a "$2" = "saveConfiguration" ]; then
       cp /tmp/portal.conf /usr/share/nginx/portal/js/configuration.json
       exit $?
     fi
     ;;
   "background")
-    if [ $# -eq 2 -a $2 = "default" ]; then
+    if [ $# -eq 2 -a "$2" = "default" ]; then
       cp $KUPIKI_PATH/client/assets/upload/default.jpg $KUPIKI_PATH/client/assets/upload/background.jpg
       exit $?
     fi
     ;;
   "hostapd")
-    if [ $# -eq 2 -a $2 = "load" ]; then
+    if [ $# -eq 2 -a "$2" = "load" ]; then
       cat /etc/hostapd/hostapd.conf
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "save" ]; then
+    if [ $# -eq 2 -a "$2" = "save" ]; then
       cp /tmp/hostapd.conf /etc/hostapd/hostapd.conf
       exit $?
     fi
@@ -75,13 +115,13 @@ case ${1} in
     fi
     ;;
   "service")
-    if [ $# -eq 3 -a \( $3 = "start" -o $3 = "stop" -o $3 = "restart" \) ]; then
+    if [ $# -eq 3 -a \( "$3" = "start" -o "$3" = "stop" -o "$3" = "restart" \) ]; then
       /usr/sbin/service $2 $3
       exit $?
     fi
     ;;
   "netflow")
-    if [ $# -eq 2 -a $2 = "stats" ]; then
+    if [ $# -eq 2 -a "$2" = "stats" ]; then
         if [ -f /var/cache/nfdump/.nfstat ]; then
             /usr/bin/nfexpire -l /var/cache/nfdump | grep :
             exit $?
@@ -91,25 +131,25 @@ case ${1} in
     fi
     ;;
   "system")
-    if [ $# -eq 2 -a $2 = "check" ]; then
+    if [ $# -eq 2 -a "$2" = "check" ]; then
       #/usr/bin/apt-get upgrade -s | /bin/grep -v 'Const\|Inst' | /usr/bin/tail -1 | /usr/bin/cut -f1 -d ' '
       /usr/bin/apt list --upgradable 2>/dev/null | /usr/bin/wc -l | /usr/bin/awk '{print$1-1}'
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "reboot" ]; then
-      #/sbin/shutdown -r -t 1
+    if [ $# -eq 2 -a "$2" = "reboot" ]; then
+      /sbin/shutdown -r -t 1
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "shutdown" ]; then
-      #/sbin/shutdown -t 1
+    if [ $# -eq 2 -a "$2" = "shutdown" ]; then
+      /sbin/shutdown -t 1
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "update" ]; then
-      sleep 4
-      #/usr/bin/apt-get update -y -qq
+    if [ $# -eq 2 -a "$2" = "update" ]; then
+      #sleep 4
+      /usr/bin/apt-get update -y -qq
       exit $?
     fi
-    if [ $# -eq 2 -a $2 = "upgrade" ]; then
+    if [ $# -eq 2 -a "$2" = "upgrade" ]; then
       /usr/bin/apt-get -qq -y -o "Dpkg::Options::=--force-confdef" -o "Dpkg::Options::=--force-confold" upgrade
       exit $?
     fi
