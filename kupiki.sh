@@ -6,6 +6,10 @@ if [ $# -lt 1 ]; then
 fi
 
 KUPIKI_PATH="/home/kupiki/Kupiki-Hotspot-Admin"
+CHILLI_CONFIG="/etc/chilli/defaults"
+if [ -f /etc/chilli/config ]; then
+  CHILLI_CONFIG="/etc/chilli/config"
+fi
 HOSTNAME=`hostname`
 
 DEFAULT_STATS_RANGE="AVERAGE -r 60 -s -1h"
@@ -15,15 +19,15 @@ case ${1} in
     if [ $# -eq 2 -a "$2" = "getMacAuth" ]; then
       IS_ACTIVE='"active" : false'
       MAC_PASSWD='"password" : ""'
-      grep HS_MACAUTH= /etc/chilli/defaults | cut -d'=' -f1 | grep '#' > /dev/null
+      grep HS_MACAUTH= $CHILLI_CONFIG | cut -d'=' -f1 | grep '#' > /dev/null
       if [ $? -eq 0 ]; then
         IS_ACTIVE='"active" : false'
       fi
-      grep HS_MACAUTH=off /etc/chilli/defaults > /dev/null
+      grep HS_MACAUTH=off $CHILLI_CONFIG > /dev/null
       if [ $? -eq 0 ]; then
         IS_ACTIVE='"active" : false'
       fi
-      CURRENT_PASSWD=`grep HS_MACPASSWD= /etc/chilli/defaults | cut -d'=' -f2`
+      CURRENT_PASSWD=`grep HS_MACPASSWD= $CHILLI_CONFIG | cut -d'=' -f2`
       if [ "$CURRENT_PASSWD" != "" ]; then
         MAC_PASSWD='"password" : '${CURRENT_PASSWD}
       fi
@@ -35,14 +39,9 @@ case ${1} in
       if [ "$3" = "true" ]; then
         IS_ACTIVE="on"
       fi
-      sed -i s/^.*HS_MACAUTH=.*/HS_MACAUTH=${IS_ACTIVE}/ /etc/chilli/defaults
+      sed -i s/^.*HS_MACAUTH=.*/HS_MACAUTH=${IS_ACTIVE}/ $CHILLI_CONFIG
       if [ "$4" != "" ]; then
-        grep HS_MACPASSWD= /etc/chilli/defaults > /dev/null
-        if [ $? -eq 1 ]; then
-          sed -i "21iHS_MACPASSWD=\"$4\"" /etc/chilli/defaults
-        else
-          sed -i s/^.*HS_MACPASSWD=.*/HS_MACPASSWD=\"$4\"/ /etc/chilli/defaults
-        fi
+        sed -i s/^.*HS_MACPASSWD=.*/HS_MACPASSWD=\"$4\"/ $CHILLI_CONFIG
       fi
       exit $?
     fi
