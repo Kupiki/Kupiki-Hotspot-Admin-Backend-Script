@@ -45,8 +45,8 @@ case ${1} in
       fi
       exit $?
     fi
-    if [ $# -eq 4 -a "$2" = "setMacAuth" ]; then
-      echo '{ "active" : true, "password" : "123456"}'
+    if [ $# -eq 2 -a "$2" = "getAllowedDomains" ]; then
+      grep HS_UAMDOMAINS $CHILLI_CONFIG
       exit $?
     fi
     ;;
