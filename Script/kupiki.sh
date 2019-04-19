@@ -67,20 +67,20 @@ case ${1} in
       exit $?
     fi
     ;;
-  "data")
-    if [ $# -eq 2 -a "$2" = "disk" ]; then
-      /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/df-root/df_complex-used.rrd $DEFAULT_STATS_RANGE
-      exit $?
-    fi
-    if [ $# -eq 2 -a "$2" = "memory" ]; then
-      /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/memory/memory-used.rrd $DEFAULT_STATS_RANGE
-      exit $?
-    fi
-    if [ $# -eq 2 -a "$2" = "cpu" ]; then
-      /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/processes/ps_state-running.rrd $DEFAULT_STATS_RANGE
-      exit $?
-    fi
-    ;;
+  # "data")
+  #   if [ $# -eq 2 -a "$2" = "disk" ]; then
+  #     /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/df-root/df_complex-used.rrd $DEFAULT_STATS_RANGE
+  #     exit $?
+  #   fi
+  #   if [ $# -eq 2 -a "$2" = "memory" ]; then
+  #     /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/memory/memory-used.rrd $DEFAULT_STATS_RANGE
+  #     exit $?
+  #   fi
+  #   if [ $# -eq 2 -a "$2" = "cpu" ]; then
+  #     /usr/bin/rrdtool fetch /var/lib/collectd/rrd/$HOSTNAME/processes/ps_state-running.rrd $DEFAULT_STATS_RANGE
+  #     exit $?
+  #   fi
+  #   ;;
   "portal")
     if [ $# -eq 2 -a "$2" = "getConfiguration" ]; then
       cat /usr/share/nginx/portal/js/configuration.json
