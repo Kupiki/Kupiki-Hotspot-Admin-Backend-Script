@@ -79,7 +79,6 @@ def restartService(commandParametersArray):
         return runCommand("/usr/sbin/service {} {}".format(commandParametersArray[0], "restart"))
 
 def stopService(commandParametersArray):
-    print(commandParametersArray)
     if (len(commandParametersArray) != 1):
         return default()
     else:
@@ -101,40 +100,46 @@ def commandService(commandParametersArray):
 # ######## Hostpad
 
 def getHostapdConfiguration(commandParametersArray):
+    if (len(commandParametersArray) != 0):
+        return default()
     return runCommand("cat /etc/hostapd/hostapd.conf")
 
 def saveHostapdConfiguration(commandParametersArray):
-    return runCommand("cat /etc/hostapd/hostapd.conf")
-
-def commandHostapd(commandParametersArray):
     if (len(commandParametersArray) < 1):
         return default()
-    else:
-        commandParameterSwitcher = {
-            "load" : getHostapdConfiguration,
-            "save" : saveHostapdConfiguration
-        }
-        func = commandParameterSwitcher.get(commandParametersArray[0], default)
-        return func(commandParametersArray[1:])
+    fileContent = '\n'.join(commandParametersArray)
+    return runCommand("cat << EOT > /etc/hostapd/hostapd.conf\n{}\nEOT".format(fileContent))
+
+def commandHostapd(commandParametersArray):
+    commandParameterSwitcher = {
+        "load" : getHostapdConfiguration,
+        "save" : saveHostapdConfiguration
+    }
+    func = commandParameterSwitcher.get(commandParametersArray[0], default)
+    return func(commandParametersArray[1:])
 
 # ######## Portal
 
 def getPortalConfiguration(commandParametersArray):
+    if (len(commandParametersArray) != 0):
+        return default()
     return runCommand("cat /usr/share/nginx/portal/js/configuration.json")
 
 def savePortalConfiguration(commandParametersArray):
-    return runCommand("cat /etc/hostapd/hostapd.conf")
+    if (len(commandParametersArray) == 0):
+        return default()
+    fileContentJSON = ' '.join(commandParametersArray)
+    fileContentParsed = json.loads(fileContentJSON)
+    fileContentPrettified = json.dumps(fileContentParsed, indent=2, sort_keys=False)
+    return runCommand("cat << EOT > /usr/share/nginx/portal/js/configuration.json\n{}\nEOT".format(fileContentPrettified))
 
 def commandPortal(commandParametersArray):
-    if (len(commandParametersArray) < 1):
-        return default()
-    else:
-        commandParameterSwitcher = {
-            "load" : getPortalConfiguration,
-            "save" : savePortalConfiguration
-        }
-        func = commandParameterSwitcher.get(commandParametersArray[0], default)
-        return func(commandParametersArray[1:])
+    commandParameterSwitcher = {
+        "load" : getPortalConfiguration,
+        "save" : savePortalConfiguration
+    }
+    func = commandParameterSwitcher.get(commandParametersArray[0], default)
+    return func(commandParametersArray[1:])
 
 # ######## Temperature
 
@@ -181,6 +186,8 @@ def commandSystem(commandParametersArray):
 # ######## Mac Authentication
 
 def getMacAuthConfiguration(commandParametersArray):
+    if (len(commandParametersArray) != 0):
+        return default()
     returnMessage = {}
     returnMessage['status'] = 'success'
     resultMessage = {}
@@ -196,18 +203,33 @@ def getMacAuthConfiguration(commandParametersArray):
     return returnMessage
 
 def saveMacAuthConfiguration(commandParametersArray):
-    return runCommand("cat /etc/hostapd/hostapd.conf")
-
-def commandMacAuth(commandParametersArray):
-    if (len(commandParametersArray) != 1):
+    if (len(commandParametersArray) != 2):
         return default()
     else:
-        commandParameterSwitcher = {
-            "load" : getMacAuthConfiguration,
-            "save" : saveMacAuthConfiguration
-        }
-        func = commandParameterSwitcher.get(commandParametersArray[0], default)
-        return func(commandParametersArray[1:])
+        returnMessage = {}
+        returnMessage['status'] = 'failed'
+        returnMessage['message'] = ''
+        is_active=False
+        if (commandParametersArray[0] == 'true'): is_active=True
+        macAuthActivated = runCommand("sed -i s/^.*HS_MACAUTH=.*/HS_MACAUTH={}/ /etc/chilli/config".format(is_active))
+        if (macAuthActivated['status'] == "failed"):
+            returnMessage['message'] = macAuthActivated['message']
+            return returnMessage
+        macAuthPassword = runCommand("sed -i s/^.*HS_MACPASSWD=.*/HS_MACPASSWD=\"{}\"/ /etc/chilli/config".format(commandParametersArray[1]))
+        if (macAuthPassword['status'] == "failed"):
+            returnMessage['message'] = macAuthPassword['message']
+            return returnMessage
+        returnMessage['status'] = 'success'
+        returnMessage['message'] = 'Configuration saved'
+        return returnMessage
+
+def commandMacAuth(commandParametersArray):
+    commandParameterSwitcher = {
+        "load" : getMacAuthConfiguration,
+        "save" : saveMacAuthConfiguration
+    }
+    func = commandParameterSwitcher.get(commandParametersArray[0], default)
+    return func(commandParametersArray[1:])
 
 # ######## Main process
 
