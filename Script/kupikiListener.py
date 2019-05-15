@@ -2,7 +2,6 @@
 import pika
 from subprocess import check_output, CalledProcessError, STDOUT
 import json
-import socket
 import os
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -10,7 +9,7 @@ channel = connection.channel()
 channel.queue_declare(queue='kupiki.publish')
 channel.queue_declare(queue='kupiki.reply')
 
-systemHostname = socket.gethostname()
+systemHostname = os.uname()[1]
 counterMsg = 0
 
 def runCommand(command):
