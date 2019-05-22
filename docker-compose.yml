@@ -1,0 +1,13 @@
+version: '3'
+services:
+  rabbitmq: # The RabbitMQ container.
+    build:
+      context: .
+    ports:
+     - 15672:15672
+     - 5672:5672
+    volumes:
+     - rabbit_mq:/var/lib/rabbitmq:cached
+    network_mode: "host"
+volumes:
+  rabbit_mq:
